@@ -27,12 +27,36 @@ class Surface {
     SDL_RenderClear(this->renderer);
   }
 
-  public: void drawRect(const int _x, const int _y, const int _w, const int _h, Color const &_color) {
+  public: void drawRect(const int _x, const int _y, const int _w, const int _h, Color const &_color, const bool _fill = true) {
     SDL_SetRenderDrawColor(this->renderer,
       _color.r, _color.g, _color.b, 255);
 
     SDL_Rect r { .x = _x, .y = _y, .w = _w, .h = _h };
-    SDL_RenderFillRect(this->renderer, &r);
+    if (_fill)
+      SDL_RenderFillRect(this->renderer, &r);
+    else
+      SDL_RenderDrawRect(this->renderer, &r);
+  }
+
+  public: void drawLine(const int _x1, const int _y1, const int _x2, const int _y2, Color const &_color) {
+    SDL_SetRenderDrawColor(this->renderer,
+      _color.r, _color.g, _color.b, 255);
+
+    SDL_RenderDrawLine(this->renderer, _x1, _y1, _x2, _y2);
+  }
+
+  public: void drawMark(const int _x, const int _y, Color const &_color) {
+    this->drawLine(_x-5, _y-5, _x+5, _y+5, _color);
+    this->drawLine(_x-5, _y+5, _x+5, _y-5, _color);
+  }
+
+  public: void drawCircle(const int _x, const int _y, const int _diam, Color const &_color, const bool _fill = true) {
+    /*SDL_SetRenderDrawColor(this->renderer,
+      _color.r, _color.g, _color.b, 255);
+ 
+    if (_fill)
+    SDL_RenderDrawLine(this->renderer, _x1, _y1, _x2, _y2);*/
+    this->drawRect(_x-_diam/2, _y-_diam/2, _diam, _diam, _color, _fill);
   }
 
   public: void present() {
@@ -62,6 +86,8 @@ class Surface {
           break;
 
         case SDL_FINGERMOTION:
+          this->drawMark(ev.tfinger.x, ev.tfinger.y, {255, 255, 255});
+          this->present();
           std::cout << "Touch event: id" << ev.tfinger.fingerId << std::endl;
           break;
 

@@ -4,6 +4,7 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "Primitives.hh"
@@ -23,7 +24,7 @@ class Frame {
   public: std::vector<std::shared_ptr<Frame>> subframes;
 };
 
-void drawFrameChilds(::Surface &gr, std::weak_ptr<Frame> _frame,
+std::tuple<int, int> drawFrameChilds(::Surface &gr, std::weak_ptr<Frame> _frame,
     const int _x = 0, const int _y = 0,
     const int _w = 640, const int _h = 480) {
   assert(!_frame.expired());
@@ -47,10 +48,35 @@ void drawFrameChilds(::Surface &gr, std::weak_ptr<Frame> _frame,
   }
 
   if (frame->subframes.empty()) {
-    gr.drawRect(x, y, _w, _h, frame->color);
+    gr.drawRect(x, y, width, height, frame->color);
+    auto bcolor = adjColor(frame->color);
+    gr.drawRect(x, y, width, height, bcolor, false);
+    gr.drawLine(x, y, x+width, y+height, bcolor);
+    gr.drawLine(x, y+height, x+width, y, bcolor);
+
+    return {width, height};
   } else {
-    for (auto &subframe : frame->subframes)
-      drawFrameChilds(gr, subframe, x, y, width, height);
+
+    std::vector<std::tuple<int, int>> sep_line_centers;
+    for (auto &subframe : frame->subframes) {
+      auto [sf_w, sf_h] = drawFrameChilds(gr, subframe, x, y, width, height);
+
+      std::cout << "x: " << x << "; y: " << y << std::endl;
+      if (frame->split_type == ::Frame::SplitType::Vertical) {
+        x += sf_w;
+        sep_line_centers.push_back({x, y+sf_h/2});
+      } else {
+        y += sf_h;
+        sep_line_centers.push_back({x+sf_w/2, y});
+      }
+    }
+
+    // drop last element
+    sep_line_centers.resize(sep_line_centers.size()-1);
+    // draw items
+    for (const auto &[cx, cy] : sep_line_centers) {
+      gr.drawCircle(cx, cy, 40, {200, 0, 0});
+    }
   }
 }
 
@@ -72,8 +98,12 @@ int main() {
   auto subframe_l = std::make_shared<::Frame>();
   subframe_l->width = .5f;
   subframe_l->color = {0, 128, 0};
+  auto subframe_r = std::make_shared<::Frame>();
+  subframe_r->width = .5f;
+  subframe_r->color = {0, 0, 255};
 
   root->subframes.push_back(subframe_l);
+  root->subframes.push_back(subframe_r);
 
   drawFrameChilds(gr, root, 0, 0, 640, 480);
 
