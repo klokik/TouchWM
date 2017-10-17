@@ -12,7 +12,7 @@
 
 
 class Frame {
-  public: enum class SplitType {Vertical, Horisontal};
+  public: enum class SplitType {Vertical, Horizontal};
   public: enum class SizeType {Absolute, Ratio};
   public: float width = 1.f;
   public: float height = 1.f;
@@ -96,14 +96,23 @@ int main() {
   root->color = {128, 0, 0};
 
   auto subframe_l = std::make_shared<::Frame>();
-  subframe_l->width = .5f;
+  subframe_l->width = .4f;
   subframe_l->color = {0, 128, 0};
   auto subframe_r = std::make_shared<::Frame>();
-  subframe_r->width = .5f;
+  subframe_r->width = .6f;
   subframe_r->color = {0, 0, 255};
+  subframe_r->split_type = ::Frame::SplitType::Horizontal;
+  auto subframe_rt= std::make_shared<::Frame>();
+  subframe_rt->height = .3f;
+  subframe_rt->color = {0, 100, 100};
+  auto subframe_rb= std::make_shared<::Frame>();
+  subframe_rb->height = .7f;
+  subframe_rb->color = {100, 100, 0};
 
   root->subframes.push_back(subframe_l);
   root->subframes.push_back(subframe_r);
+  subframe_r->subframes.push_back(subframe_rt);
+  subframe_r->subframes.push_back(subframe_rb);
 
   drawFrameChilds(gr, root, 0, 0, 640, 480);
 
