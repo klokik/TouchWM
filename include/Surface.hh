@@ -91,6 +91,14 @@ class Surface {
           std::cout << "Touch event: id" << ev.tfinger.fingerId << std::endl;
           break;
 
+        case SDL_MOUSEMOTION:
+          if (!(ev.motion.state & SDL_BUTTON_LMASK))
+            break;
+          this->drawMark(ev.motion.x, ev.motion.y, {200, 200, 200});
+          this->present();
+          std::cout << "Mouse event" << std::endl;
+          break;
+
         default:
           //std::cout << "Some event" << std::endl;
           break; 
