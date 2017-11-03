@@ -4,7 +4,7 @@ project(TouchDesktopCOmpositor)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_FLAGS "--std=c++17 -pg ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "--std=c++17 -g ${CMAKE_CXX_FLAGS}")
 
 find_package(SDL2 REQUIRED)
 
