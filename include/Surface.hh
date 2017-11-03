@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 
 #include <SDL2/SDL.h>
@@ -67,45 +68,82 @@ class Surface {
     SDL_Delay(ms);
   }
 
-  public: void pollLoop() {
-    this->done = false;
+  public: bool pollOnce() {
     SDL_Event ev;
 
-    while (!this->done) {
-      if (SDL_PollEvent(&ev)) {
-        switch (ev.type) {
-        case SDL_QUIT:
+    if (SDL_PollEvent(&ev)) {
+      switch (ev.type) {
+      case SDL_QUIT:
+        this->done = true;
+        break;
+
+      case SDL_KEYUP:
+        if (ev.key.keysym.sym == SDLK_ESCAPE) {
+          std::cout << "Escape" << std::endl;
           this->done = true;
-          break;
-
-        case SDL_KEYUP:
-          if (ev.key.keysym.sym == SDLK_ESCAPE) {
-            std::cout << "Escape" << std::endl;
-            this->done = true;
-          }
-          break;
-
-        case SDL_FINGERMOTION:
-          this->drawMark(ev.tfinger.x, ev.tfinger.y, {255, 255, 255});
-          this->present();
-          std::cout << "Touch event: id" << ev.tfinger.fingerId << std::endl;
-          break;
-
-        case SDL_MOUSEMOTION:
-          if (!(ev.motion.state & SDL_BUTTON_LMASK))
-            break;
-          this->drawMark(ev.motion.x, ev.motion.y, {200, 200, 200});
-          this->present();
-          std::cout << "Mouse event" << std::endl;
-          break;
-
-        default:
-          //std::cout << "Some event" << std::endl;
-          break; 
         }
+        break;
+
+      case SDL_FINGERDOWN:
+        if (this->onTouchDown)
+          this->onTouchDown(ev.tfinger.x, ev.tfinger.y, ev.tfinger.fingerId, 0);
+        break;
+
+      case SDL_FINGERUP:
+        if (this->onTouchUp)
+          this->onTouchUp(ev.tfinger.x, ev.tfinger.y, ev.tfinger.fingerId, 0);
+        break;
+
+      case SDL_FINGERMOTION:
+        if (this->onTouchMotion)
+          this->onTouchMotion(ev.tfinger.x, ev.tfinger.y,
+                              ev.tfinger.dx, ev.tfinger.dy,
+                              ev.tfinger.fingerId, 0);
+        break;
+
+      case SDL_MOUSEBUTTONDOWN:
+        if (ev.button.which == SDL_TOUCH_MOUSEID)
+          break;
+
+        if (this->onTouchDown)
+          this->onTouchDown(ev.button.x, ev.button.y, ev.button.which, ev.button.button);
+        break;
+
+      case SDL_MOUSEBUTTONUP:
+        if (ev.button.which == SDL_TOUCH_MOUSEID)
+          break;
+
+        if (this->onTouchUp)
+          this->onTouchUp(ev.button.x, ev.button.y, ev.button.which, ev.button.button);
+        break;
+
+      case SDL_MOUSEMOTION:
+        if (ev.motion.which == SDL_TOUCH_MOUSEID)
+          break;
+
+        if (this->onTouchMotion)
+          this->onTouchMotion(ev.motion.x, ev.motion.y,
+                              ev.motion.xrel, ev.motion.yrel,
+                              ev.motion.which, ev.motion.state);
+        break;
+
+      default:
+        //std::cout << "Some event" << std::endl;
+        break;
       }
-      else
-        this->sleep(100);
+    }
+    else
+      return false;
+
+    return true;
+  }
+
+  public: void pollLoop() {
+    this->done = false;
+
+    while (!this->done) {
+      if (!this->pollOnce())
+        this->sleep(30);
     }
   }
 
@@ -115,6 +153,10 @@ class Surface {
   }
 
   public: Color clear_color = {100, 100, 100};
+
+  public: std::function<void(int, int, int, int)> onTouchDown;
+  public: std::function<void(int, int, int, int)> onTouchUp;
+  public: std::function<void(int, int, int, int, int, int)> onTouchMotion;
 
   private: SDL_Window *window = nullptr;
   private: SDL_Renderer *renderer = nullptr;
